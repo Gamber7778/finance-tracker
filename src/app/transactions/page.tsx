@@ -2,10 +2,10 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Plus, ArrowUpRight, ArrowDownRight, Search, Trash2, Edit3, X, Check,
+  Plus, ArrowUpRight, ArrowDownRight, Search, Trash2, Check, X,
 } from 'lucide-react';
 import { useFinance } from '@/lib/context';
-import { formatCurrency, formatDate, getCurrentMonth, getMonthOptions, cn } from '@/lib/utils';
+import { formatCurrency, formatDate, formatDateShort, getCurrentMonth, getMonthOptions, cn } from '@/lib/utils';
 import AddTransactionModal from '@/components/AddTransactionModal';
 import DynamicIcon from '@/components/DynamicIcon';
 import { TransactionType } from '@/lib/types';
@@ -43,12 +43,12 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Транзакції</h1>
+        <h1 className="text-xl lg:text-2xl font-bold text-white">Транзакції</h1>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-emerald-400 transition-colors"
+          className="flex items-center gap-2 rounded-xl bg-emerald-500 px-3 py-2 lg:px-4 lg:py-2.5 text-sm font-semibold text-black hover:bg-emerald-400 transition-colors"
         >
           <Plus size={16} />
           Додати
@@ -56,7 +56,7 @@ export default function TransactionsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 items-center flex-wrap">
+      <div className="space-y-3 lg:space-y-0 lg:flex lg:gap-3 lg:items-center lg:flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
           <input
@@ -68,48 +68,50 @@ export default function TransactionsPage() {
           />
         </div>
 
-        <select
-          value={filterMonth}
-          onChange={(e) => setFilterMonth(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none transition-colors appearance-none cursor-pointer"
-        >
-          {monthOptions.map(o => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
+        <div className="flex gap-2">
+          <select
+            value={filterMonth}
+            onChange={(e) => setFilterMonth(e.target.value)}
+            className="flex-1 lg:flex-none rounded-xl border border-zinc-700 bg-zinc-800/50 px-3 lg:px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none transition-colors appearance-none cursor-pointer"
+          >
+            {monthOptions.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
 
-        <div className="flex gap-1 p-1 rounded-xl bg-zinc-800/50 border border-zinc-700">
-          {(['all', 'expense', 'income'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setFilterType(t)}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-                filterType === t
-                  ? t === 'expense' ? 'bg-red-500/20 text-red-400'
-                    : t === 'income' ? 'bg-emerald-500/20 text-emerald-400'
-                    : 'bg-zinc-700 text-white'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              )}
-            >
-              {t === 'all' ? 'Усі' : t === 'expense' ? 'Витрати' : 'Доходи'}
-            </button>
-          ))}
+          <div className="flex gap-1 p-1 rounded-xl bg-zinc-800/50 border border-zinc-700">
+            {(['all', 'expense', 'income'] as const).map(t => (
+              <button
+                key={t}
+                onClick={() => setFilterType(t)}
+                className={cn(
+                  'px-2.5 lg:px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
+                  filterType === t
+                    ? t === 'expense' ? 'bg-red-500/20 text-red-400'
+                      : t === 'income' ? 'bg-emerald-500/20 text-emerald-400'
+                      : 'bg-zinc-700 text-white'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                )}
+              >
+                {t === 'all' ? 'Усі' : t === 'expense' ? 'Витрати' : 'Доходи'}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Summary */}
-      <div className="flex gap-4">
-        <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-4 py-2">
+      <div className="flex gap-2 lg:gap-4 flex-wrap">
+        <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 lg:px-4 py-2">
           <ArrowUpRight size={14} className="text-emerald-400" />
-          <span className="text-sm text-emerald-400 font-medium">+{formatCurrency(totalIncome)}</span>
+          <span className="text-xs lg:text-sm text-emerald-400 font-medium">+{formatCurrency(totalIncome)}</span>
         </div>
-        <div className="flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-2">
+        <div className="flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 px-3 lg:px-4 py-2">
           <ArrowDownRight size={14} className="text-red-400" />
-          <span className="text-sm text-red-400 font-medium">-{formatCurrency(totalExpense)}</span>
+          <span className="text-xs lg:text-sm text-red-400 font-medium">-{formatCurrency(totalExpense)}</span>
         </div>
-        <div className="flex items-center gap-2 rounded-xl bg-zinc-800/50 border border-zinc-700 px-4 py-2">
-          <span className="text-sm text-zinc-400">{filtered.length} транзакцій</span>
+        <div className="flex items-center gap-2 rounded-xl bg-zinc-800/50 border border-zinc-700 px-3 lg:px-4 py-2">
+          <span className="text-xs lg:text-sm text-zinc-400">{filtered.length} транзакцій</span>
         </div>
       </div>
 
@@ -121,32 +123,33 @@ export default function TransactionsPage() {
             return (
               <div
                 key={t.id}
-                className="flex items-center gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3 group hover:border-zinc-700 transition-colors"
+                className="flex items-center gap-3 lg:gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 px-3 lg:px-4 py-3 group hover:border-zinc-700 transition-colors"
               >
                 <div
-                  className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0"
+                  className="flex h-9 w-9 lg:h-10 lg:w-10 items-center justify-center rounded-xl flex-shrink-0"
                   style={{ backgroundColor: (cat?.color || '#6b7280') + '20' }}
                 >
-                  <DynamicIcon name={cat?.icon || 'MoreHorizontal'} size={18} className="text-zinc-300" />
+                  <DynamicIcon name={cat?.icon || 'MoreHorizontal'} size={16} className="text-zinc-300" />
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-zinc-200">{cat?.name || 'Невідома'}</p>
+                  <p className="text-sm font-medium text-zinc-200 truncate">{cat?.name || 'Невідома'}</p>
                   {t.description && (
                     <p className="text-xs text-zinc-500 truncate">{t.description}</p>
                   )}
+                  <p className="text-[11px] text-zinc-600 lg:hidden">{formatDateShort(t.date)}</p>
                 </div>
 
-                <p className="text-xs text-zinc-500 flex-shrink-0">{formatDate(t.date)}</p>
+                <p className="text-xs text-zinc-500 flex-shrink-0 hidden lg:block">{formatDate(t.date)}</p>
 
                 <p className={cn(
-                  'text-sm font-semibold flex items-center gap-1 flex-shrink-0 min-w-[100px] justify-end',
+                  'text-sm font-semibold flex items-center gap-1 flex-shrink-0 justify-end',
                   t.type === 'income' ? 'text-emerald-400' : 'text-red-400'
                 )}>
                   {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
                 </p>
 
-                <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex-shrink-0 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                   {deleteConfirm === t.id ? (
                     <div className="flex gap-1">
                       <button

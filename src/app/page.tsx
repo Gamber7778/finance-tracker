@@ -50,66 +50,67 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Дашборд</h1>
+          <h1 className="text-xl lg:text-2xl font-bold text-white">Дашборд</h1>
           <p className="text-sm text-zinc-500 mt-0.5 capitalize">{getMonthName(month)}</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-emerald-400 transition-colors"
+          className="flex items-center gap-2 rounded-xl bg-emerald-500 px-3 py-2 lg:px-4 lg:py-2.5 text-sm font-semibold text-black hover:bg-emerald-400 transition-colors"
         >
           <Plus size={16} />
-          Додати транзакцію
+          <span className="hidden sm:inline">Додати транзакцію</span>
+          <span className="sm:hidden">Додати</span>
         </button>
       </div>
 
       {/* Balance Cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 lg:p-5">
+          <div className="flex items-center gap-3 mb-2 lg:mb-3">
+            <div className="flex h-9 w-9 lg:h-10 lg:w-10 items-center justify-center rounded-xl bg-emerald-500/10">
               <Wallet size={18} className="text-emerald-400" />
             </div>
             <span className="text-sm text-zinc-400">Загальний баланс</span>
           </div>
           <p className={cn(
-            'text-3xl font-bold',
+            'text-2xl lg:text-3xl font-bold',
             balance >= 0 ? 'text-white' : 'text-red-400'
           )}>
             {formatCurrency(balance)}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 lg:p-5">
+          <div className="flex items-center gap-3 mb-2 lg:mb-3">
+            <div className="flex h-9 w-9 lg:h-10 lg:w-10 items-center justify-center rounded-xl bg-emerald-500/10">
               <TrendingUp size={18} className="text-emerald-400" />
             </div>
             <span className="text-sm text-zinc-400">Доходи за місяць</span>
           </div>
-          <p className="text-3xl font-bold text-emerald-400">
+          <p className="text-2xl lg:text-3xl font-bold text-emerald-400">
             +{formatCurrency(income)}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 lg:p-5">
+          <div className="flex items-center gap-3 mb-2 lg:mb-3">
+            <div className="flex h-9 w-9 lg:h-10 lg:w-10 items-center justify-center rounded-xl bg-red-500/10">
               <TrendingDown size={18} className="text-red-400" />
             </div>
             <span className="text-sm text-zinc-400">Витрати за місяць</span>
           </div>
-          <p className="text-3xl font-bold text-red-400">
+          <p className="text-2xl lg:text-3xl font-bold text-red-400">
             -{formatCurrency(expenses)}
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-4">
         {/* Spending Breakdown */}
-        <div className="col-span-1 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
+        <div className="lg:col-span-1 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 lg:p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-white">Куди йдуть гроші</h2>
             <Link href="/statistics" className="text-xs text-zinc-500 hover:text-emerald-400 transition-colors flex items-center gap-1">
@@ -117,8 +118,8 @@ export default function Dashboard() {
             </Link>
           </div>
           {spending.length > 0 ? (
-            <div className="flex gap-4">
-              <div className="w-36 h-36 flex-shrink-0">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="w-36 h-36 flex-shrink-0 mx-auto sm:mx-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -154,7 +155,7 @@ export default function Dashboard() {
                   <div key={item.categoryId} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div
-                        className="h-2.5 w-2.5 rounded-full"
+                        className="h-2.5 w-2.5 rounded-full flex-shrink-0"
                         style={{ backgroundColor: item.color }}
                       />
                       <span className="text-xs text-zinc-400">{item.categoryName}</span>
@@ -174,7 +175,7 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Transactions */}
-        <div className="col-span-2 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
+        <div className="lg:col-span-2 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 lg:p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-white">Останні транзакції</h2>
             <Link href="/transactions" className="text-xs text-zinc-500 hover:text-emerald-400 transition-colors flex items-center gap-1">
@@ -207,7 +208,7 @@ export default function Dashboard() {
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className={cn(
-                        'text-sm font-semibold flex items-center gap-1',
+                        'text-sm font-semibold flex items-center gap-1 justify-end',
                         t.type === 'income' ? 'text-emerald-400' : 'text-red-400'
                       )}>
                         {t.type === 'income' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
@@ -235,9 +236,9 @@ export default function Dashboard() {
 
       {/* Budget Alerts */}
       {overBudgets.length > 0 && (
-        <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-5">
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 lg:p-5">
           <h2 className="text-base font-semibold text-red-400 mb-3">Перевищення бюджету</h2>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {overBudgets.map((item, i) => (
               <div key={i} className="rounded-xl bg-red-500/10 border border-red-500/20 p-3">
                 <p className="text-sm font-medium text-red-300">{item.categoryName}</p>

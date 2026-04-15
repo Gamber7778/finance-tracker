@@ -76,19 +76,20 @@ export default function GoalsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Фінансові цілі</h1>
+        <h1 className="text-xl lg:text-2xl font-bold text-white">Фінансові цілі</h1>
         <button
           onClick={() => { setShowAddModal(true); resetForm(); }}
-          className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-emerald-400 transition-colors"
+          className="flex items-center gap-2 rounded-xl bg-emerald-500 px-3 py-2 lg:px-4 lg:py-2.5 text-sm font-semibold text-black hover:bg-emerald-400 transition-colors"
         >
           <Plus size={16} />
-          Нова ціль
+          <span className="hidden sm:inline">Нова ціль</span>
+          <span className="sm:hidden">Додати</span>
         </button>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3 lg:space-y-4">
         {state.goals.length > 0 ? (
           state.goals.map(goal => {
             const percentage = goal.targetAmount > 0
@@ -101,76 +102,110 @@ export default function GoalsPage() {
               <div
                 key={goal.id}
                 className={cn(
-                  'rounded-2xl border p-6 group transition-colors',
+                  'rounded-2xl border p-4 lg:p-6 group transition-colors',
                   isCompleted
                     ? 'border-emerald-500/30 bg-emerald-500/5'
                     : 'border-zinc-800 bg-zinc-900/50'
                 )}
               >
-                <div className="flex items-start gap-4 mb-4">
+                <div className="flex items-start gap-3 lg:gap-4 mb-4">
                   <div
-                    className="flex h-12 w-12 items-center justify-center rounded-xl flex-shrink-0"
+                    className="flex h-10 w-10 lg:h-12 lg:w-12 items-center justify-center rounded-xl flex-shrink-0"
                     style={{ backgroundColor: goal.color + '20' }}
                   >
-                    <DynamicIcon name={goal.icon} size={22} className="text-zinc-200" />
+                    <DynamicIcon name={goal.icon} size={20} className="text-zinc-200" />
                   </div>
 
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-semibold text-white">{goal.name}</h3>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm lg:text-base font-semibold text-white">{goal.name}</h3>
                       {isCompleted && (
                         <span className="flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
                           <Check size={10} /> Досягнуто
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-zinc-500 mt-0.5">
+                    <p className="text-[11px] lg:text-xs text-zinc-500 mt-0.5">
                       {days > 0 ? `${days} днів залишилось` : days === 0 ? 'Сьогодні дедлайн' : `Прострочено на ${Math.abs(days)} днів`}
                       {' · '}До {formatDate(goal.deadline)}
                     </p>
                   </div>
 
-                  <div className="text-right">
-                    <p className="text-xl font-bold text-white">
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-lg lg:text-xl font-bold text-white">
                       {formatCurrency(goal.currentAmount)}
                     </p>
                     <p className="text-xs text-zinc-500">
                       з {formatCurrency(goal.targetAmount)}
                     </p>
                   </div>
+                </div>
 
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => { setShowAddFundsModal(goal.id); setFundsToAdd(''); }}
-                      className="rounded-lg p-1.5 text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
-                      title="Поповнити"
-                    >
-                      <Plus size={14} />
-                    </button>
-                    {deleteConfirm === goal.id ? (
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => { deleteGoal(goal.id); setDeleteConfirm(null); }}
-                          className="rounded-lg p-1.5 text-red-400 hover:bg-red-500/20 transition-colors"
-                        >
-                          <Check size={14} />
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirm(null)}
-                          className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 transition-colors"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ) : (
+                {/* Mobile action buttons */}
+                <div className="flex gap-2 mb-3 lg:hidden">
+                  <button
+                    onClick={() => { setShowAddFundsModal(goal.id); setFundsToAdd(''); }}
+                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-800/50 py-2 text-xs font-medium text-zinc-300 active:bg-zinc-700"
+                  >
+                    <Plus size={12} /> Поповнити
+                  </button>
+                  {deleteConfirm === goal.id ? (
+                    <div className="flex gap-1">
                       <button
-                        onClick={() => setDeleteConfirm(goal.id)}
-                        className="rounded-lg p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        onClick={() => { deleteGoal(goal.id); setDeleteConfirm(null); }}
+                        className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400"
                       >
-                        <Trash2 size={14} />
+                        <Check size={12} />
                       </button>
-                    )}
-                  </div>
+                      <button
+                        onClick={() => setDeleteConfirm(null)}
+                        className="rounded-xl border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-xs text-zinc-400"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setDeleteConfirm(goal.id)}
+                      className="rounded-xl border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-xs text-zinc-500 active:bg-zinc-700"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Desktop action buttons (hover) */}
+                <div className="hidden lg:flex gap-1 absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => { setShowAddFundsModal(goal.id); setFundsToAdd(''); }}
+                    className="rounded-lg p-1.5 text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                    title="Поповнити"
+                  >
+                    <Plus size={14} />
+                  </button>
+                  {deleteConfirm === goal.id ? (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => { deleteGoal(goal.id); setDeleteConfirm(null); }}
+                        className="rounded-lg p-1.5 text-red-400 hover:bg-red-500/20 transition-colors"
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirm(null)}
+                        className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setDeleteConfirm(goal.id)}
+                      className="rounded-lg p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
 
                 <div className="h-3 rounded-full bg-zinc-800">
@@ -261,7 +296,7 @@ export default function GoalsPage() {
 
           <div>
             <label className="block text-sm text-zinc-400 mb-2">Іконка</label>
-            <div className="grid grid-cols-9 gap-1.5 max-h-24 overflow-y-auto">
+            <div className="grid grid-cols-7 sm:grid-cols-9 gap-1.5 max-h-24 overflow-y-auto">
               {ICON_OPTIONS.slice(0, 18).map(ic => (
                 <button
                   key={ic}

@@ -52,25 +52,26 @@ export default function BudgetsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Бюджети</h1>
+          <h1 className="text-xl lg:text-2xl font-bold text-white">Бюджети</h1>
           <p className="text-sm text-zinc-500 mt-0.5 capitalize">{getMonthName(month)}</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
           disabled={availableCategories.length === 0}
-          className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-2 rounded-xl bg-emerald-500 px-3 py-2 lg:px-4 lg:py-2.5 text-sm font-semibold text-black hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <Plus size={16} />
-          Новий бюджет
+          <span className="hidden sm:inline">Новий бюджет</span>
+          <span className="sm:hidden">Додати</span>
         </button>
       </div>
 
       {/* Summary */}
       {budgetData.length > 0 && (
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 lg:p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-zinc-400">Загальний бюджет</span>
             <span className={cn(
@@ -99,28 +100,28 @@ export default function BudgetsPage() {
             <div
               key={item.id}
               className={cn(
-                'rounded-2xl border p-5 group transition-colors',
+                'rounded-2xl border p-4 lg:p-5 group transition-colors',
                 item.isOver
                   ? 'border-red-500/30 bg-red-500/5'
                   : 'border-zinc-800 bg-zinc-900/50'
               )}
             >
-              <div className="flex items-center gap-4 mb-3">
+              <div className="flex items-center gap-3 lg:gap-4 mb-3">
                 <div
-                  className="flex h-11 w-11 items-center justify-center rounded-xl flex-shrink-0"
+                  className="flex h-10 w-10 lg:h-11 lg:w-11 items-center justify-center rounded-xl flex-shrink-0"
                   style={{ backgroundColor: (item.category?.color || '#6b7280') + '20' }}
                 >
-                  <DynamicIcon name={item.category?.icon || 'MoreHorizontal'} size={20} className="text-zinc-200" />
+                  <DynamicIcon name={item.category?.icon || 'MoreHorizontal'} size={18} className="text-zinc-200" />
                 </div>
 
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-zinc-200">{item.category?.name}</p>
                   <p className="text-xs text-zinc-500">Щомісячний бюджет</p>
                 </div>
 
-                <div className="text-right">
+                <div className="text-right flex-shrink-0">
                   <p className={cn(
-                    'text-lg font-bold',
+                    'text-base lg:text-lg font-bold',
                     item.isOver ? 'text-red-400' : 'text-white'
                   )}>
                     {formatCurrency(item.spent)}
@@ -129,10 +130,10 @@ export default function BudgetsPage() {
                 </div>
 
                 {item.isOver && (
-                  <AlertTriangle size={18} className="text-red-400 flex-shrink-0" />
+                  <AlertTriangle size={18} className="text-red-400 flex-shrink-0 hidden sm:block" />
                 )}
 
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex-shrink-0">
                   {deleteConfirm === item.id ? (
                     <div className="flex gap-1">
                       <button

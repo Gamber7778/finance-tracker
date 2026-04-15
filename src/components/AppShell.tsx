@@ -22,7 +22,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Sidebar />
-      <main className="ml-64 min-h-screen p-8">
+      <main className="lg:ml-64 min-h-screen p-4 pb-24 lg:p-8 lg:pb-8">
         {children}
       </main>
     </>

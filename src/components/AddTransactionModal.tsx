@@ -94,7 +94,7 @@ export default function AddTransactionModal({ isOpen, onClose, defaultType = 'ex
 
         <div>
           <label className="block text-sm text-zinc-400 mb-2">Категорія</label>
-          <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+          <div className="grid grid-cols-3 gap-2 max-h-40 lg:max-h-48 overflow-y-auto">
             {categories.map((cat) => (
               <button
                 key={cat.id}

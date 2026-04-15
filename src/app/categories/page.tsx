@@ -56,15 +56,16 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Категорії</h1>
+        <h1 className="text-xl lg:text-2xl font-bold text-white">Категорії</h1>
         <button
           onClick={() => { setShowAddModal(true); setEditingId(null); setNewName(''); }}
-          className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-emerald-400 transition-colors"
+          className="flex items-center gap-2 rounded-xl bg-emerald-500 px-3 py-2 lg:px-4 lg:py-2.5 text-sm font-semibold text-black hover:bg-emerald-400 transition-colors"
         >
           <Plus size={16} />
-          Нова категорія
+          <span className="hidden sm:inline">Нова категорія</span>
+          <span className="sm:hidden">Додати</span>
         </button>
       </div>
 
@@ -72,7 +73,7 @@ export default function CategoriesPage() {
         <button
           onClick={() => setActiveTab('expense')}
           className={cn(
-            'px-4 py-2 rounded-lg text-sm font-medium transition-all',
+            'px-3 lg:px-4 py-2 rounded-lg text-sm font-medium transition-all',
             activeTab === 'expense' ? 'bg-red-500/20 text-red-400' : 'text-zinc-400 hover:text-zinc-200'
           )}
         >
@@ -81,7 +82,7 @@ export default function CategoriesPage() {
         <button
           onClick={() => setActiveTab('income')}
           className={cn(
-            'px-4 py-2 rounded-lg text-sm font-medium transition-all',
+            'px-3 lg:px-4 py-2 rounded-lg text-sm font-medium transition-all',
             activeTab === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'text-zinc-400 hover:text-zinc-200'
           )}
         >
@@ -89,17 +90,17 @@ export default function CategoriesPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {categories.map(cat => (
           <div
             key={cat.id}
-            className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 group hover:border-zinc-700 transition-colors"
+            className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 lg:p-4 group hover:border-zinc-700 transition-colors"
           >
             <div
-              className="flex h-11 w-11 items-center justify-center rounded-xl flex-shrink-0"
+              className="flex h-10 w-10 lg:h-11 lg:w-11 items-center justify-center rounded-xl flex-shrink-0"
               style={{ backgroundColor: cat.color + '20' }}
             >
-              <DynamicIcon name={cat.icon} size={20} className="text-zinc-200" />
+              <DynamicIcon name={cat.icon} size={18} className="text-zinc-200" />
             </div>
 
             <div className="flex-1 min-w-0">
@@ -109,7 +110,7 @@ export default function CategoriesPage() {
               </p>
             </div>
 
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
               <button
                 onClick={() => handleStartEdit(cat.id)}
                 className="rounded-lg p-1.5 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
@@ -165,7 +166,7 @@ export default function CategoriesPage() {
 
           <div>
             <label className="block text-sm text-zinc-400 mb-2">Іконка</label>
-            <div className="grid grid-cols-9 gap-1.5 max-h-32 overflow-y-auto">
+            <div className="grid grid-cols-7 sm:grid-cols-9 gap-1.5 max-h-32 overflow-y-auto">
               {ICON_OPTIONS.map(icon => (
                 <button
                   key={icon}
