@@ -7,6 +7,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Account {
+  id                String        @id @default(cuid())
+  name              String
+  type              String        // "checking" | "savings" | "cash"
+  icon              String        @default("Wallet")
+  color             String        @default("#3b82f6")
+  balance           Float         @default(0)
+  includeInSpending Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  transactionsFrom  Transaction[] @relation("FromAccount")
+  transactionsTo    Transaction[] @relation("ToAccount")
+}
+
 model Category {
   id           String        @id @default(cuid())
   name         String
@@ -19,14 +32,18 @@ model Category {
 }
 
 model Transaction {
-  id          String   @id @default(cuid())
-  amount      Float
-  type        String   // "income" | "expense"
-  description String   @default("")
-  date        DateTime
-  createdAt   DateTime @default(now())
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  amount        Float
+  type          String   // "income" | "expense" | "transfer" | "adjustment"
+  description   String   @default("")
+  date          DateTime
+  createdAt     DateTime @default(now())
+  categoryId    String?
+  category      Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  accountId     String?
+  account       Account?  @relation("FromAccount", fields: [accountId], references: [id], onDelete: SetNull)
+  toAccountId   String?
+  toAccount     Account?  @relation("ToAccount", fields: [toAccountId], references: [id], onDelete: SetNull)
 }
 
 model Budget {

@@ -2,13 +2,22 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Plus, ArrowUpRight, ArrowDownRight, Search, Trash2, Check, X,
+  Plus, ArrowUpRight, ArrowDownRight, ArrowLeftRight, Settings2,
+  Search, Trash2, Check, X,
 } from 'lucide-react';
 import { useFinance } from '@/lib/context';
 import { formatCurrency, formatDate, formatDateShort, getCurrentMonth, getMonthOptions, cn } from '@/lib/utils';
 import AddTransactionModal from '@/components/AddTransactionModal';
 import DynamicIcon from '@/components/DynamicIcon';
 import { TransactionType } from '@/lib/types';
+
+const TYPE_FILTERS: { value: 'all' | TransactionType; label: string }[] = [
+  { value: 'all', label: 'Усі' },
+  { value: 'expense', label: 'Витрати' },
+  { value: 'income', label: 'Доходи' },
+  { value: 'transfer', label: 'Перекази' },
+  { value: 'adjustment', label: 'Корекції' },
+];
 
 export default function TransactionsPage() {
   const { state, isLoaded, deleteTransaction } = useFinance();
@@ -22,17 +31,80 @@ export default function TransactionsPage() {
   const filtered = useMemo(() => {
     return state.transactions.filter(t => {
       const cat = state.categories.find(c => c.id === t.categoryId);
+      const acc = state.accounts.find(a => a.id === t.accountId);
+      const toAcc = state.accounts.find(a => a.id === t.toAccountId);
+      const searchLower = search.toLowerCase();
       const matchesSearch = !search ||
-        (cat?.name || '').toLowerCase().includes(search.toLowerCase()) ||
-        t.description.toLowerCase().includes(search.toLowerCase());
+        (cat?.name || '').toLowerCase().includes(searchLower) ||
+        t.description.toLowerCase().includes(searchLower) ||
+        (acc?.name || '').toLowerCase().includes(searchLower) ||
+        (toAcc?.name || '').toLowerCase().includes(searchLower);
       const matchesType = filterType === 'all' || t.type === filterType;
       const matchesMonth = t.date.startsWith(filterMonth);
       return matchesSearch && matchesType && matchesMonth;
     });
-  }, [state.transactions, state.categories, search, filterType, filterMonth]);
+  }, [state.transactions, state.categories, state.accounts, search, filterType, filterMonth]);
 
   const totalIncome = filtered.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0);
   const totalExpense = filtered.filter(t => t.type === 'expense').reduce((a, t) => a + t.amount, 0);
+
+  const typeIcon = (type: string) => {
+    switch (type) {
+      case 'income': return <ArrowUpRight size={14} />;
+      case 'expense': return <ArrowDownRight size={14} />;
+      case 'transfer': return <ArrowLeftRight size={14} />;
+      case 'adjustment': return <Settings2 size={14} />;
+      default: return null;
+    }
+  };
+
+  const typeColor = (type: string) => {
+    switch (type) {
+      case 'income': return 'text-emerald-400';
+      case 'expense': return 'text-red-400';
+      case 'transfer': return 'text-blue-400';
+      case 'adjustment': return 'text-amber-400';
+      default: return 'text-zinc-400';
+    }
+  };
+
+  const typeActiveClass = (type: string) => {
+    switch (type) {
+      case 'expense': return 'bg-red-500/20 text-red-400';
+      case 'income': return 'bg-emerald-500/20 text-emerald-400';
+      case 'transfer': return 'bg-blue-500/20 text-blue-400';
+      case 'adjustment': return 'bg-amber-500/20 text-amber-400';
+      default: return 'bg-zinc-700 text-white';
+    }
+  };
+
+  const getTransactionLabel = (t: typeof state.transactions[0]) => {
+    if (t.type === 'transfer') {
+      const from = state.accounts.find(a => a.id === t.accountId);
+      const to = state.accounts.find(a => a.id === t.toAccountId);
+      return `${from?.name || '?'} → ${to?.name || '?'}`;
+    }
+    if (t.type === 'adjustment') {
+      const acc = state.accounts.find(a => a.id === t.accountId);
+      return `Корекція · ${acc?.name || '?'}`;
+    }
+    const cat = state.categories.find(c => c.id === t.categoryId);
+    return cat?.name || 'Невідома';
+  };
+
+  const getTransactionIcon = (t: typeof state.transactions[0]) => {
+    if (t.type === 'transfer') return 'ArrowLeftRight';
+    if (t.type === 'adjustment') return 'Settings2';
+    const cat = state.categories.find(c => c.id === t.categoryId);
+    return cat?.icon || 'MoreHorizontal';
+  };
+
+  const getTransactionColor = (t: typeof state.transactions[0]) => {
+    if (t.type === 'transfer') return '#3b82f6';
+    if (t.type === 'adjustment') return '#f59e0b';
+    const cat = state.categories.find(c => c.id === t.categoryId);
+    return cat?.color || '#6b7280';
+  };
 
   if (!isLoaded) {
     return (
@@ -78,26 +150,25 @@ export default function TransactionsPage() {
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
-
-          <div className="flex gap-1 p-1 rounded-xl bg-zinc-800/50 border border-zinc-700">
-            {(['all', 'expense', 'income'] as const).map(t => (
-              <button
-                key={t}
-                onClick={() => setFilterType(t)}
-                className={cn(
-                  'px-2.5 lg:px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
-                  filterType === t
-                    ? t === 'expense' ? 'bg-red-500/20 text-red-400'
-                      : t === 'income' ? 'bg-emerald-500/20 text-emerald-400'
-                      : 'bg-zinc-700 text-white'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                )}
-              >
-                {t === 'all' ? 'Усі' : t === 'expense' ? 'Витрати' : 'Доходи'}
-              </button>
-            ))}
-          </div>
         </div>
+      </div>
+
+      {/* Type filter pills */}
+      <div className="flex gap-1 p-1 rounded-xl bg-zinc-800/50 border border-zinc-700 overflow-x-auto">
+        {TYPE_FILTERS.map(f => (
+          <button
+            key={f.value}
+            onClick={() => setFilterType(f.value)}
+            className={cn(
+              'px-2.5 lg:px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
+              filterType === f.value
+                ? typeActiveClass(f.value)
+                : 'text-zinc-400 hover:text-zinc-200'
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
       {/* Summary */}
@@ -119,7 +190,11 @@ export default function TransactionsPage() {
       <div className="space-y-2">
         {filtered.length > 0 ? (
           filtered.map((t) => {
-            const cat = state.categories.find(c => c.id === t.categoryId);
+            const iconName = getTransactionIcon(t);
+            const color = getTransactionColor(t);
+            const label = getTransactionLabel(t);
+            const acc = state.accounts.find(a => a.id === t.accountId);
+
             return (
               <div
                 key={t.id}
@@ -127,16 +202,23 @@ export default function TransactionsPage() {
               >
                 <div
                   className="flex h-9 w-9 lg:h-10 lg:w-10 items-center justify-center rounded-xl flex-shrink-0"
-                  style={{ backgroundColor: (cat?.color || '#6b7280') + '20' }}
+                  style={{ backgroundColor: color + '20' }}
                 >
-                  <DynamicIcon name={cat?.icon || 'MoreHorizontal'} size={16} className="text-zinc-300" />
+                  <DynamicIcon name={iconName} size={16} className="text-zinc-300" />
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-zinc-200 truncate">{cat?.name || 'Невідома'}</p>
-                  {t.description && (
-                    <p className="text-xs text-zinc-500 truncate">{t.description}</p>
-                  )}
+                  <p className="text-sm font-medium text-zinc-200 truncate">{label}</p>
+                  <div className="flex items-center gap-1.5">
+                    {t.description && (
+                      <p className="text-xs text-zinc-500 truncate">{t.description}</p>
+                    )}
+                    {acc && (
+                      <span className="text-[10px] text-zinc-600 flex-shrink-0">
+                        {t.description ? '·' : ''} {acc.name}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-zinc-600 lg:hidden">{formatDateShort(t.date)}</p>
                 </div>
 
@@ -144,9 +226,10 @@ export default function TransactionsPage() {
 
                 <p className={cn(
                   'text-sm font-semibold flex items-center gap-1 flex-shrink-0 justify-end',
-                  t.type === 'income' ? 'text-emerald-400' : 'text-red-400'
+                  typeColor(t.type)
                 )}>
-                  {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                  {typeIcon(t.type)}
+                  {t.type === 'expense' ? '-' : t.type === 'transfer' ? '' : '+'}{formatCurrency(t.amount)}
                 </p>
 
                 <div className="flex-shrink-0 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">

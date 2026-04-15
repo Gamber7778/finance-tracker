@@ -16,15 +16,47 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const transaction = await prisma.transaction.create({
-      data: {
-        amount: body.amount,
-        type: body.type,
-        categoryId: body.categoryId,
-        description: body.description || '',
-        date: new Date(body.date),
-      },
+    const { type, amount, accountId, toAccountId, categoryId, description, date } = body;
+
+    const transaction = await prisma.$transaction(async (tx) => {
+      const t = await tx.transaction.create({
+        data: {
+          amount,
+          type,
+          categoryId: categoryId || null,
+          description: description || '',
+          date: new Date(date),
+          accountId: accountId || null,
+          toAccountId: toAccountId || null,
+        },
+      });
+
+      if (accountId) {
+        if (type === 'income' || type === 'adjustment') {
+          await tx.account.update({
+            where: { id: accountId },
+            data: { balance: { increment: amount } },
+          });
+        } else if (type === 'expense') {
+          await tx.account.update({
+            where: { id: accountId },
+            data: { balance: { decrement: amount } },
+          });
+        } else if (type === 'transfer' && toAccountId) {
+          await tx.account.update({
+            where: { id: accountId },
+            data: { balance: { decrement: amount } },
+          });
+          await tx.account.update({
+            where: { id: toAccountId },
+            data: { balance: { increment: amount } },
+          });
+        }
+      }
+
+      return t;
     });
+
     return NextResponse.json(transaction);
   } catch (e) {
     console.error('POST /api/transactions error:', e);

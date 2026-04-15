@@ -51,7 +51,7 @@ export default function StatisticsPage() {
     const incDays: Record<string, number> = {};
 
     state.transactions
-      .filter(t => t.date.startsWith(selectedMonth))
+      .filter(t => t.date.startsWith(selectedMonth) && (t.type === 'expense' || t.type === 'income'))
       .forEach(t => {
         const day = new Date(t.date).getDate().toString();
         if (t.type === 'expense') {
@@ -182,7 +182,6 @@ export default function StatisticsPage() {
 
       {/* Expenses & Income by Category */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
-        {/* Expense Breakdown Pie */}
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 lg:p-5">
           <h2 className="text-sm lg:text-base font-semibold text-white mb-4">Витрати по категоріях</h2>
           {expensesByCategory.length > 0 ? (
@@ -238,7 +237,6 @@ export default function StatisticsPage() {
           )}
         </div>
 
-        {/* Income Breakdown Pie */}
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 lg:p-5">
           <h2 className="text-sm lg:text-base font-semibold text-white mb-4">Доходи по категоріях</h2>
           {incomeByCategory.length > 0 ? (
@@ -295,7 +293,7 @@ export default function StatisticsPage() {
         </div>
       </div>
 
-      {/* Daily Income & Expenses combined chart */}
+      {/* Daily Income & Expenses */}
       <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 lg:p-5">
         <h2 className="text-sm lg:text-base font-semibold text-white mb-4">Доходи та витрати по днях</h2>
         <div className="h-48 lg:h-56 -ml-2">

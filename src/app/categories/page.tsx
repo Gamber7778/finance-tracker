@@ -3,15 +3,16 @@
 import { useState } from 'react';
 import { Plus, Trash2, Edit3, Check, X } from 'lucide-react';
 import { useFinance } from '@/lib/context';
-import { TransactionType } from '@/lib/types';
 import { ICON_OPTIONS, COLOR_OPTIONS } from '@/lib/defaults';
 import Modal from '@/components/Modal';
 import DynamicIcon from '@/components/DynamicIcon';
 import { cn } from '@/lib/utils';
 
+type CategoryType = 'income' | 'expense';
+
 export default function CategoriesPage() {
   const { state, isLoaded, addCategory, updateCategory, deleteCategory } = useFinance();
-  const [activeTab, setActiveTab] = useState<TransactionType>('expense');
+  const [activeTab, setActiveTab] = useState<CategoryType>('expense');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);

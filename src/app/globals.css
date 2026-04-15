@@ -89,3 +89,7 @@ input[type="number"] {
 .animate-fade-in {
   animation: fade-in 0.15s ease-out;
 }
+
+body[data-modal-open="true"] [data-bottom-nav] {
+  display: none !important;
+}

@@ -22,12 +22,23 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
     return () => window.removeEventListener('keydown', handleEsc);
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.setAttribute('data-modal-open', 'true');
+    } else {
+      document.body.removeAttribute('data-modal-open');
+    }
+    return () => {
+      document.body.removeAttribute('data-modal-open');
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[60] flex items-end lg:items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in"
       style={{ paddingTop: 'var(--sat)' }}
       onClick={(e) => e.target === overlayRef.current && onClose()}
     >
@@ -35,7 +46,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
         className={`${maxWidth} w-full lg:mx-4 rounded-t-2xl lg:rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl flex flex-col`}
         style={{
           maxHeight: 'calc(100vh - var(--sat) - 20px)',
-          paddingBottom: 'calc(var(--sab) + 0px)',
+          paddingBottom: 'calc(var(--sab) + 8px)',
         }}
       >
         <div className="flex items-center justify-between border-b border-zinc-800 px-5 lg:px-6 py-4 flex-shrink-0">

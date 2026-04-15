@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, ArrowLeftRight, Tag, PiggyBank, Target,
-  BarChart3, AlertTriangle, LogOut, User, Menu, X,
+  BarChart3, AlertTriangle, LogOut, User, Menu, X, Wallet,
 } from 'lucide-react';
 import { useFinance } from '@/lib/context';
 import { useAuth } from '@/lib/authContext';
@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react';
 
 const navigation = [
   { name: 'Дашборд', href: '/', icon: LayoutDashboard },
+  { name: 'Рахунки', href: '/accounts', icon: Wallet },
   { name: 'Транзакції', href: '/transactions', icon: ArrowLeftRight },
   { name: 'Категорії', href: '/categories', icon: Tag },
   { name: 'Бюджети', href: '/budgets', icon: PiggyBank },
@@ -22,8 +23,8 @@ const navigation = [
 
 const bottomNav = [
   { name: 'Головна', href: '/', icon: LayoutDashboard },
+  { name: 'Рахунки', href: '/accounts', icon: Wallet },
   { name: 'Транзакції', href: '/transactions', icon: ArrowLeftRight },
-  { name: 'Бюджети', href: '/budgets', icon: PiggyBank },
   { name: 'Статистика', href: '/statistics', icon: BarChart3 },
   { name: 'Більше', href: '#menu', icon: Menu },
 ];
@@ -110,10 +111,12 @@ export default function Sidebar() {
       </aside>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-800 bg-zinc-950"
+      <nav
+        data-bottom-nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-md"
         style={{ paddingBottom: 'var(--sab)' }}
       >
-        <div className="flex items-center justify-around px-1 h-[60px]">
+        <div className="flex items-center justify-around px-1 h-[56px]">
           {bottomNav.map((item) => {
             const isMenu = item.href === '#menu';
             const isActive = !isMenu && pathname === item.href;
@@ -142,11 +145,6 @@ export default function Sidebar() {
               >
                 <item.icon size={20} />
                 <span className="text-[10px]">{item.name}</span>
-                {item.name === 'Бюджети' && budgetAlerts.length > 0 && (
-                  <span className="absolute top-1 right-1/4 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] text-white font-bold">
-                    {budgetAlerts.length}
-                  </span>
-                )}
               </Link>
             );
           })}

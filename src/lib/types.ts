@@ -1,10 +1,23 @@
-export type TransactionType = 'income' | 'expense';
+export type TransactionType = 'income' | 'expense' | 'transfer' | 'adjustment';
+
+export type AccountType = 'checking' | 'savings' | 'cash';
+
+export interface Account {
+  id: string;
+  name: string;
+  type: AccountType;
+  icon: string;
+  color: string;
+  balance: number;
+  includeInSpending: boolean;
+  createdAt?: string;
+}
 
 export interface Category {
   id: string;
   name: string;
   icon: string;
-  type: TransactionType;
+  type: 'income' | 'expense';
   color: string;
 }
 
@@ -12,10 +25,12 @@ export interface Transaction {
   id: string;
   amount: number;
   type: TransactionType;
-  categoryId: string;
+  categoryId: string | null;
   description: string;
-  date: string; // ISO string
+  date: string;
   createdAt: string;
+  accountId: string | null;
+  toAccountId: string | null;
 }
 
 export interface Budget {
@@ -40,5 +55,6 @@ export interface FinanceState {
   categories: Category[];
   budgets: Budget[];
   goals: Goal[];
+  accounts: Account[];
   currency: string;
 }

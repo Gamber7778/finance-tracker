@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { FinanceState, Transaction, Category, Budget, Goal, TransactionType } from './types';
+import { FinanceState, Transaction, Category, Budget, Goal, Account } from './types';
 import { useToast } from './toast';
 
 async function api<T>(url: string, opts?: RequestInit): Promise<T> {
@@ -28,6 +28,8 @@ function filterByMonth(transactions: Transaction[], month?: string): Transaction
   });
 }
 
+type SpendingType = 'income' | 'expense';
+
 interface FinanceContextType {
   state: FinanceState;
   isLoaded: boolean;
@@ -45,10 +47,13 @@ interface FinanceContextType {
   addGoal: (data: Omit<Goal, 'id'>) => Promise<void>;
   updateGoal: (id: string, data: Partial<Omit<Goal, 'id'>>) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
+  addAccount: (data: Omit<Account, 'id'>) => Promise<void>;
+  updateAccount: (id: string, data: Partial<Omit<Account, 'id'>>) => Promise<void>;
+  deleteAccount: (id: string) => Promise<void>;
   getBalance: () => number;
   getTotalIncome: (month?: string) => number;
   getTotalExpenses: (month?: string) => number;
-  getSpendingByCategory: (type: TransactionType, month?: string) => { categoryId: string; categoryName: string; total: number; color: string }[];
+  getSpendingByCategory: (type: SpendingType, month?: string) => { categoryId: string; categoryName: string; total: number; color: string }[];
   getBudgetStatus: (budgetId: string, month?: string) => { spent: number; limit: number; percentage: number; isOver: boolean };
   budgetAlerts: { categoryName: string; spent: number; limit: number }[];
 }
@@ -62,6 +67,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     categories: [],
     budgets: [],
     goals: [],
+    accounts: [],
     currency: '€',
   });
   const [isLoaded, setIsLoaded] = useState(false);
@@ -76,12 +82,14 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       api<Category[]>('/api/categories'),
       api<Budget[]>('/api/budgets'),
       api<Goal[]>('/api/goals'),
-    ]).then(([transactions, categories, budgets, goals]) => {
+      api<Account[]>('/api/accounts'),
+    ]).then(([transactions, categories, budgets, goals, accounts]) => {
       setState({
         transactions,
         categories,
         budgets,
         goals,
+        accounts,
         currency: '€',
       });
       setIsLoaded(true);
@@ -104,8 +112,35 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         method: 'POST',
         body: JSON.stringify(data),
       });
-      setState(prev => ({ ...prev, transactions: [t, ...prev.transactions] }));
-      showToast('Транзакцію додано', 'success');
+      setState(prev => {
+        const newAccounts = [...prev.accounts];
+        if (data.accountId) {
+          const idx = newAccounts.findIndex(a => a.id === data.accountId);
+          if (idx !== -1) {
+            if (data.type === 'income' || data.type === 'adjustment') {
+              newAccounts[idx] = { ...newAccounts[idx], balance: newAccounts[idx].balance + data.amount };
+            } else if (data.type === 'expense') {
+              newAccounts[idx] = { ...newAccounts[idx], balance: newAccounts[idx].balance - data.amount };
+            } else if (data.type === 'transfer') {
+              newAccounts[idx] = { ...newAccounts[idx], balance: newAccounts[idx].balance - data.amount };
+              if (data.toAccountId) {
+                const toIdx = newAccounts.findIndex(a => a.id === data.toAccountId);
+                if (toIdx !== -1) {
+                  newAccounts[toIdx] = { ...newAccounts[toIdx], balance: newAccounts[toIdx].balance + data.amount };
+                }
+              }
+            }
+          }
+        }
+        return { ...prev, transactions: [t, ...prev.transactions], accounts: newAccounts };
+      });
+      const labels: Record<string, string> = {
+        income: 'Дохід додано',
+        expense: 'Витрату додано',
+        transfer: 'Переказ виконано',
+        adjustment: 'Коригування додано',
+      };
+      showToast(labels[data.type] || 'Транзакцію додано', 'success');
     } catch (e) {
       console.error('addTransaction error:', e);
       showToast('Помилка при додаванні транзакції', 'error');
@@ -131,17 +166,40 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   const deleteTransaction = useCallback(async (id: string) => {
     try {
+      const existing = state.transactions.find(t => t.id === id);
       await api(`/api/transactions/${id}`, { method: 'DELETE' });
-      setState(prev => ({
-        ...prev,
-        transactions: prev.transactions.filter(x => x.id !== id),
-      }));
+      setState(prev => {
+        const newAccounts = [...prev.accounts];
+        if (existing?.accountId) {
+          const idx = newAccounts.findIndex(a => a.id === existing.accountId);
+          if (idx !== -1) {
+            if (existing.type === 'income' || existing.type === 'adjustment') {
+              newAccounts[idx] = { ...newAccounts[idx], balance: newAccounts[idx].balance - existing.amount };
+            } else if (existing.type === 'expense') {
+              newAccounts[idx] = { ...newAccounts[idx], balance: newAccounts[idx].balance + existing.amount };
+            } else if (existing.type === 'transfer') {
+              newAccounts[idx] = { ...newAccounts[idx], balance: newAccounts[idx].balance + existing.amount };
+              if (existing.toAccountId) {
+                const toIdx = newAccounts.findIndex(a => a.id === existing.toAccountId);
+                if (toIdx !== -1) {
+                  newAccounts[toIdx] = { ...newAccounts[toIdx], balance: newAccounts[toIdx].balance - existing.amount };
+                }
+              }
+            }
+          }
+        }
+        return {
+          ...prev,
+          transactions: prev.transactions.filter(x => x.id !== id),
+          accounts: newAccounts,
+        };
+      });
       showToast('Транзакцію видалено', 'success');
     } catch (e) {
       console.error('deleteTransaction error:', e);
       showToast('Помилка при видаленні транзакції', 'error');
     }
-  }, [showToast]);
+  }, [showToast, state.transactions]);
 
   // --- Categories ---
   const addCategory = useCallback(async (data: Omit<Category, 'id'>) => {
@@ -289,12 +347,56 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     }
   }, [showToast]);
 
+  // --- Accounts ---
+  const addAccount = useCallback(async (data: Omit<Account, 'id'>) => {
+    try {
+      const a = await api<Account>('/api/accounts', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      setState(prev => ({ ...prev, accounts: [...prev.accounts, a] }));
+      showToast('Рахунок створено', 'success');
+    } catch (e) {
+      console.error('addAccount error:', e);
+      showToast('Помилка при створенні рахунку', 'error');
+    }
+  }, [showToast]);
+
+  const updateAccount = useCallback(async (id: string, data: Partial<Omit<Account, 'id'>>) => {
+    try {
+      const a = await api<Account>(`/api/accounts/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      setState(prev => ({
+        ...prev,
+        accounts: prev.accounts.map(x => x.id === id ? a : x),
+      }));
+      showToast('Рахунок оновлено', 'success');
+    } catch (e) {
+      console.error('updateAccount error:', e);
+      showToast('Помилка при оновленні рахунку', 'error');
+    }
+  }, [showToast]);
+
+  const deleteAccount = useCallback(async (id: string) => {
+    try {
+      await api(`/api/accounts/${id}`, { method: 'DELETE' });
+      setState(prev => ({
+        ...prev,
+        accounts: prev.accounts.filter(x => x.id !== id),
+      }));
+      showToast('Рахунок видалено', 'success');
+    } catch (e) {
+      console.error('deleteAccount error:', e);
+      showToast('Помилка при видаленні рахунку', 'error');
+    }
+  }, [showToast]);
+
   // --- Computed ---
   const getBalance = useCallback(() => {
-    return state.transactions.reduce((acc, t) =>
-      t.type === 'income' ? acc + t.amount : acc - t.amount, 0
-    );
-  }, [state.transactions]);
+    return state.accounts.reduce((acc, a) => acc + a.balance, 0);
+  }, [state.accounts]);
 
   const getTotalIncome = useCallback((month?: string) => {
     return filterByMonth(state.transactions, month)
@@ -308,11 +410,13 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       .reduce((acc, t) => acc + t.amount, 0);
   }, [state.transactions]);
 
-  const getSpendingByCategory = useCallback((type: TransactionType, month?: string) => {
+  const getSpendingByCategory = useCallback((type: SpendingType, month?: string) => {
     const filtered = filterByMonth(state.transactions, month).filter(t => t.type === type);
     const map = new Map<string, number>();
     for (const t of filtered) {
-      map.set(t.categoryId, (map.get(t.categoryId) || 0) + t.amount);
+      if (t.categoryId) {
+        map.set(t.categoryId, (map.get(t.categoryId) || 0) + t.amount);
+      }
     }
     return Array.from(map.entries())
       .map(([categoryId, total]) => {
@@ -373,6 +477,9 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     addGoal,
     updateGoal,
     deleteGoal,
+    addAccount,
+    updateAccount,
+    deleteAccount,
     getBalance,
     getTotalIncome,
     getTotalExpenses,

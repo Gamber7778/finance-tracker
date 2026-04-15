@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import {
   TrendingUp, TrendingDown, Wallet, Plus, ArrowUpRight,
-  ArrowDownRight, ChevronRight,
+  ArrowDownRight, ChevronRight, ArrowLeftRight, Settings2,
 } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -28,7 +28,9 @@ export default function Dashboard() {
   const spending = useMemo(() => getSpendingByCategory('expense', month), [getSpendingByCategory, month]);
 
   const recentTransactions = useMemo(() => {
-    return state.transactions.slice(0, 5);
+    return state.transactions
+      .filter(t => t.type === 'income' || t.type === 'expense')
+      .slice(0, 5);
   }, [state.transactions]);
 
   const overBudgets = useMemo(() => {
@@ -48,6 +50,26 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  const typeIcon = (type: string) => {
+    switch (type) {
+      case 'income': return <ArrowUpRight size={14} />;
+      case 'expense': return <ArrowDownRight size={14} />;
+      case 'transfer': return <ArrowLeftRight size={14} />;
+      case 'adjustment': return <Settings2 size={14} />;
+      default: return null;
+    }
+  };
+
+  const typeColor = (type: string) => {
+    switch (type) {
+      case 'income': return 'text-emerald-400';
+      case 'expense': return 'text-red-400';
+      case 'transfer': return 'text-blue-400';
+      case 'adjustment': return 'text-amber-400';
+      default: return 'text-zinc-400';
+    }
+  };
 
   return (
     <div className="space-y-4 lg:space-y-6">
@@ -107,6 +129,42 @@ export default function Dashboard() {
           </p>
         </div>
       </div>
+
+      {/* Accounts Overview */}
+      {state.accounts.length > 0 && (
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 lg:p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold text-white">Рахунки</h2>
+            <Link href="/accounts" className="text-xs text-zinc-500 hover:text-emerald-400 transition-colors flex items-center gap-1">
+              Усі <ChevronRight size={12} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {state.accounts.map(acc => (
+              <div key={acc.id} className="flex items-center gap-3 rounded-xl bg-zinc-800/30 px-3 py-2.5">
+                <div
+                  className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0"
+                  style={{ backgroundColor: acc.color + '20' }}
+                >
+                  <DynamicIcon name={acc.icon} size={16} className="text-zinc-300" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-zinc-200 truncate">{acc.name}</p>
+                  {!acc.includeInSpending && (
+                    <p className="text-[10px] text-blue-400">Накопичення</p>
+                  )}
+                </div>
+                <p className={cn(
+                  'text-sm font-semibold flex-shrink-0',
+                  acc.balance >= 0 ? 'text-zinc-200' : 'text-red-400'
+                )}>
+                  {formatCurrency(acc.balance)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-4">
         {/* Spending Breakdown */}
@@ -209,10 +267,10 @@ export default function Dashboard() {
                     <div className="text-right flex-shrink-0">
                       <p className={cn(
                         'text-sm font-semibold flex items-center gap-1 justify-end',
-                        t.type === 'income' ? 'text-emerald-400' : 'text-red-400'
+                        typeColor(t.type)
                       )}>
-                        {t.type === 'income' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                        {formatCurrency(t.amount)}
+                        {typeIcon(t.type)}
+                        {t.type === 'expense' ? '-' : '+'}{formatCurrency(t.amount)}
                       </p>
                       <p className="text-[11px] text-zinc-600">{formatDateShort(t.date)}</p>
                     </div>
