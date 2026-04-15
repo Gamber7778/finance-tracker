@@ -10,6 +10,15 @@ body {
   color: var(--foreground);
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior: none;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+input, textarea, select, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 * {
