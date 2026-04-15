@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useFinance } from '@/lib/context';
 import { TransactionType } from '@/lib/types';
 import Modal from './Modal';
 import DynamicIcon from './DynamicIcon';
 import { cn } from '@/lib/utils';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, X as XIcon } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -30,6 +30,8 @@ export default function AddTransactionModal({ isOpen, onClose, defaultType = 'ex
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [accountId, setAccountId] = useState('');
   const [toAccountId, setToAccountId] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -40,8 +42,35 @@ export default function AddTransactionModal({ isOpen, onClose, defaultType = 'ex
       setDate(new Date().toISOString().split('T')[0]);
       setAccountId(state.accounts[0]?.id || '');
       setToAccountId('');
+      setTags([]);
+      setTagInput('');
     }
   }, [isOpen, defaultType, state.accounts]);
+
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    state.transactions.forEach(t => t.tags?.forEach(tag => set.add(tag)));
+    return Array.from(set).sort();
+  }, [state.transactions]);
+
+  const addTag = (tag: string) => {
+    const clean = tag.trim().toLowerCase();
+    if (clean && !tags.includes(clean)) {
+      setTags(prev => [...prev, clean]);
+    }
+    setTagInput('');
+  };
+
+  const removeTag = (tag: string) => {
+    setTags(prev => prev.filter(t => t !== tag));
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addTag(tagInput);
+    }
+  };
 
   const categories = state.categories.filter(c =>
     type === 'expense' ? c.type === 'expense' : c.type === 'income'
@@ -68,6 +97,7 @@ export default function AddTransactionModal({ isOpen, onClose, defaultType = 'ex
       type,
       categoryId: needsCategory ? categoryId : null,
       description,
+      tags,
       date: new Date(date).toISOString(),
       accountId,
       toAccountId: needsToAccount ? toAccountId : null,
@@ -236,6 +266,53 @@ export default function AddTransactionModal({ isOpen, onClose, defaultType = 'ex
             placeholder="Коментар (необов'язково)"
             className="w-full rounded-xl border border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition-colors"
           />
+        </div>
+
+        {/* Tags */}
+        <div>
+          <label className="block text-sm text-zinc-400 mb-1.5">Теги</label>
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {tags.map(tag => (
+                <span
+                  key={tag}
+                  className="flex items-center gap-1 rounded-lg bg-zinc-700/50 px-2 py-1 text-xs text-zinc-300"
+                >
+                  #{tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    className="text-zinc-500 hover:text-zinc-300"
+                  >
+                    <XIcon size={10} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <input
+            type="text"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={handleTagKeyDown}
+            onBlur={() => { if (tagInput.trim()) addTag(tagInput); }}
+            placeholder="Введіть тег і натисніть Enter"
+            className="w-full rounded-xl border border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition-colors"
+          />
+          {allTags.length > 0 && tagInput === '' && tags.length === 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {allTags.slice(0, 8).map(tag => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => addTag(tag)}
+                  className="rounded-lg bg-zinc-800/50 border border-zinc-700/50 px-2 py-1 text-[11px] text-zinc-500 hover:text-zinc-300 hover:border-zinc-600 transition-colors"
+                >
+                  #{tag}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Date */}

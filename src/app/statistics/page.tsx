@@ -5,6 +5,7 @@ import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
+import { Tag } from 'lucide-react';
 import { useFinance } from '@/lib/context';
 import { formatCurrency, getCurrentMonth, getMonthOptions, cn } from '@/lib/utils';
 import DynamicIcon from '@/components/DynamicIcon';
@@ -89,6 +90,23 @@ export default function StatisticsPage() {
       .filter(t => t.type === 'income' && t.date.startsWith(selectedMonth))
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 5);
+  }, [state.transactions, selectedMonth]);
+
+  const tagStats = useMemo(() => {
+    const map = new Map<string, { income: number; expense: number }>();
+    state.transactions
+      .filter(t => t.date.startsWith(selectedMonth) && (t.type === 'income' || t.type === 'expense'))
+      .forEach(t => {
+        (t.tags || []).forEach(tag => {
+          const prev = map.get(tag) || { income: 0, expense: 0 };
+          if (t.type === 'income') prev.income += t.amount;
+          else prev.expense += t.amount;
+          map.set(tag, prev);
+        });
+      });
+    return Array.from(map.entries())
+      .map(([tag, data]) => ({ tag, ...data, total: data.income + data.expense }))
+      .sort((a, b) => b.total - a.total);
   }, [state.transactions, selectedMonth]);
 
   if (!isLoaded) {
@@ -390,6 +408,37 @@ export default function StatisticsPage() {
           )}
         </div>
       </div>
+
+      {/* Tag Analytics */}
+      {tagStats.length > 0 && (
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 lg:p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Tag size={16} className="text-zinc-400" />
+            <h2 className="text-sm lg:text-base font-semibold text-white">Аналітика по тегах</h2>
+          </div>
+          <div className="space-y-2">
+            {tagStats.map(({ tag, income, expense }) => (
+              <div key={tag} className="flex items-center gap-3 rounded-xl bg-zinc-800/30 px-3 py-2.5">
+                <span className="text-xs font-medium text-zinc-300 min-w-[80px]">#{tag}</span>
+                <div className="flex-1 flex items-center gap-3">
+                  {income > 0 && (
+                    <span className="text-xs text-emerald-400">+{formatCurrency(income)}</span>
+                  )}
+                  {expense > 0 && (
+                    <span className="text-xs text-red-400">-{formatCurrency(expense)}</span>
+                  )}
+                </div>
+                <span className={cn(
+                  'text-xs font-semibold',
+                  income - expense >= 0 ? 'text-emerald-400' : 'text-red-400'
+                )}>
+                  {income - expense >= 0 ? '+' : ''}{formatCurrency(income - expense)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

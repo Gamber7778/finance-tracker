@@ -16,7 +16,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { type, amount, accountId, toAccountId, categoryId, description, date } = body;
+    const { type, amount, accountId, toAccountId, categoryId, description, date, tags } = body;
 
     const transaction = await prisma.$transaction(async (tx) => {
       const t = await tx.transaction.create({
@@ -25,6 +25,7 @@ export async function POST(req: Request) {
           type,
           categoryId: categoryId || null,
           description: description || '',
+          tags: Array.isArray(tags) ? tags : [],
           date: new Date(date),
           accountId: accountId || null,
           toAccountId: toAccountId || null,

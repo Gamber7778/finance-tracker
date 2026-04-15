@@ -27,6 +27,7 @@ export interface Transaction {
   type: TransactionType;
   categoryId: string | null;
   description: string;
+  tags: string[];
   date: string;
   createdAt: string;
   accountId: string | null;

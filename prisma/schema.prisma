@@ -36,6 +36,7 @@ model Transaction {
   amount        Float
   type          String   // "income" | "expense" | "transfer" | "adjustment"
   description   String   @default("")
+  tags          String[] @default([])
   date          DateTime
   createdAt     DateTime @default(now())
   categoryId    String?

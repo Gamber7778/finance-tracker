@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import {
   Plus, ArrowUpRight, ArrowDownRight, ArrowLeftRight, Settings2,
-  Search, Trash2, Check, X,
+  Search, Trash2, Check, X, Tag,
 } from 'lucide-react';
 import { useFinance } from '@/lib/context';
 import { formatCurrency, formatDate, formatDateShort, getCurrentMonth, getMonthOptions, cn } from '@/lib/utils';
@@ -26,7 +26,14 @@ export default function TransactionsPage() {
   const [filterType, setFilterType] = useState<'all' | TransactionType>('all');
   const [filterMonth, setFilterMonth] = useState(getCurrentMonth());
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [filterTag, setFilterTag] = useState<string | null>(null);
   const monthOptions = getMonthOptions();
+
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    state.transactions.forEach(t => t.tags?.forEach(tag => set.add(tag)));
+    return Array.from(set).sort();
+  }, [state.transactions]);
 
   const filtered = useMemo(() => {
     return state.transactions.filter(t => {
@@ -38,12 +45,14 @@ export default function TransactionsPage() {
         (cat?.name || '').toLowerCase().includes(searchLower) ||
         t.description.toLowerCase().includes(searchLower) ||
         (acc?.name || '').toLowerCase().includes(searchLower) ||
-        (toAcc?.name || '').toLowerCase().includes(searchLower);
+        (toAcc?.name || '').toLowerCase().includes(searchLower) ||
+        (t.tags || []).some(tag => tag.includes(searchLower));
       const matchesType = filterType === 'all' || t.type === filterType;
       const matchesMonth = t.date.startsWith(filterMonth);
-      return matchesSearch && matchesType && matchesMonth;
+      const matchesTag = !filterTag || (t.tags || []).includes(filterTag);
+      return matchesSearch && matchesType && matchesMonth && matchesTag;
     });
-  }, [state.transactions, state.categories, state.accounts, search, filterType, filterMonth]);
+  }, [state.transactions, state.categories, state.accounts, search, filterType, filterMonth, filterTag]);
 
   const totalIncome = filtered.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0);
   const totalExpense = filtered.filter(t => t.type === 'expense').reduce((a, t) => a + t.amount, 0);
@@ -171,6 +180,36 @@ export default function TransactionsPage() {
         ))}
       </div>
 
+      {/* Tag filter */}
+      {allTags.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto">
+          <Tag size={14} className="text-zinc-500 flex-shrink-0" />
+          <button
+            onClick={() => setFilterTag(null)}
+            className={cn(
+              'px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
+              !filterTag ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'
+            )}
+          >
+            Усі
+          </button>
+          {allTags.map(tag => (
+            <button
+              key={tag}
+              onClick={() => setFilterTag(filterTag === tag ? null : tag)}
+              className={cn(
+                'px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
+                filterTag === tag
+                  ? 'bg-emerald-500/20 text-emerald-400'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              )}
+            >
+              #{tag}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Summary */}
       <div className="flex gap-2 lg:gap-4 flex-wrap">
         <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 lg:px-4 py-2">
@@ -219,6 +258,15 @@ export default function TransactionsPage() {
                       </span>
                     )}
                   </div>
+                  {t.tags && t.tags.length > 0 && (
+                    <div className="flex gap-1 mt-0.5 flex-wrap">
+                      {t.tags.map(tag => (
+                        <span key={tag} className="text-[10px] text-zinc-500 bg-zinc-800/60 rounded px-1.5 py-0.5">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <p className="text-[11px] text-zinc-600 lg:hidden">{formatDateShort(t.date)}</p>
                 </div>
 
