@@ -8,6 +8,10 @@ async function api<T>(url: string, opts?: RequestInit): Promise<T> {
     headers: { 'Content-Type': 'application/json' },
     ...opts,
   });
+  if (!res.ok) {
+    const text = await res.text().catch(() => 'Unknown error');
+    throw new Error(`API ${opts?.method || 'GET'} ${url} failed: ${res.status} — ${text}`);
+  }
   return res.json();
 }
 
@@ -72,6 +76,9 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         goals: goals.map(g => ({ ...g, deadline: g.deadline })),
         currency: '€',
       });
+      setIsLoaded(true);
+    }).catch((err) => {
+      console.error('Failed to load data:', err);
       setIsLoaded(true);
     });
   }, []);
