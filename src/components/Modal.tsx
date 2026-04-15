@@ -15,15 +15,6 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
-
-  useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -36,20 +27,27 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in"
+      style={{ paddingTop: 'var(--sat)' }}
       onClick={(e) => e.target === overlayRef.current && onClose()}
     >
-      <div className={`${maxWidth} w-full lg:mx-4 rounded-t-2xl lg:rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl max-h-[90vh] flex flex-col`}>
+      <div
+        className={`${maxWidth} w-full lg:mx-4 rounded-t-2xl lg:rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl flex flex-col`}
+        style={{
+          maxHeight: 'calc(100vh - var(--sat) - 20px)',
+          paddingBottom: 'calc(var(--sab) + 0px)',
+        }}
+      >
         <div className="flex items-center justify-between border-b border-zinc-800 px-5 lg:px-6 py-4 flex-shrink-0">
           <h2 className="text-lg font-semibold text-white">{title}</h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors"
+            className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors active:bg-zinc-700"
           >
             <X size={18} />
           </button>
         </div>
-        <div className="px-5 lg:px-6 py-5 overflow-y-auto flex-1">
+        <div className="px-5 lg:px-6 py-5 overflow-y-auto flex-1 overscroll-contain">
           {children}
         </div>
       </div>

@@ -9,7 +9,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+      <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
       </div>
     );
@@ -20,11 +20,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <>
+    <div className="fixed inset-0 flex flex-col lg:flex-row">
       <Sidebar />
-      <main className="lg:ml-64 min-h-screen p-4 pb-24 lg:p-8 lg:pb-8">
-        {children}
+
+      {/* Main content area */}
+      <main className="flex-1 overflow-y-auto overflow-x-hidden pt-[var(--sat)] pb-[calc(60px+var(--sab))] lg:pb-0 lg:ml-64">
+        <div className="p-4 lg:p-8">
+          {children}
+        </div>
       </main>
-    </>
+    </div>
   );
 }
