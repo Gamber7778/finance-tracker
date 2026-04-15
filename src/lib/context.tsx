@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { FinanceState, Transaction, Category, Budget, Goal, TransactionType } from './types';
+import { useToast } from './toast';
 
 async function api<T>(url: string, opts?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -10,7 +11,7 @@ async function api<T>(url: string, opts?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => 'Unknown error');
-    throw new Error(`API ${opts?.method || 'GET'} ${url} failed: ${res.status} — ${text}`);
+    throw new Error(`${res.status}: ${text}`);
   }
   return res.json();
 }
@@ -30,6 +31,8 @@ function filterByMonth(transactions: Transaction[], month?: string): Transaction
 interface FinanceContextType {
   state: FinanceState;
   isLoaded: boolean;
+  loadError: string | null;
+  retryLoad: () => void;
   addTransaction: (data: Omit<Transaction, 'id' | 'createdAt'>) => Promise<void>;
   updateTransaction: (id: string, data: Partial<Omit<Transaction, 'id' | 'createdAt'>>) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
@@ -53,6 +56,7 @@ interface FinanceContextType {
 const FinanceContext = createContext<FinanceContextType | null>(null);
 
 export function FinanceProvider({ children }: { children: React.ReactNode }) {
+  const { showToast } = useToast();
   const [state, setState] = useState<FinanceState>({
     transactions: [],
     categories: [],
@@ -61,8 +65,12 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     currency: '€',
   });
   const [isLoaded, setIsLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
+    setIsLoaded(false);
+    setLoadError(null);
+
     Promise.all([
       api<Transaction[]>('/api/transactions'),
       api<Category[]>('/api/categories'),
@@ -70,138 +78,216 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       api<Goal[]>('/api/goals'),
     ]).then(([transactions, categories, budgets, goals]) => {
       setState({
-        transactions: transactions.map(t => ({ ...t, date: t.date, createdAt: t.createdAt })),
+        transactions,
         categories,
         budgets,
-        goals: goals.map(g => ({ ...g, deadline: g.deadline })),
+        goals,
         currency: '€',
       });
       setIsLoaded(true);
+      setLoadError(null);
     }).catch((err) => {
       console.error('Failed to load data:', err);
+      setLoadError('Не вдалось завантажити дані. Перевірте підключення до бази даних.');
       setIsLoaded(true);
     });
   }, []);
 
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
   // --- Transactions ---
   const addTransaction = useCallback(async (data: Omit<Transaction, 'id' | 'createdAt'>) => {
-    const t = await api<Transaction>('/api/transactions', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    setState(prev => ({ ...prev, transactions: [t, ...prev.transactions] }));
-  }, []);
+    try {
+      const t = await api<Transaction>('/api/transactions', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      setState(prev => ({ ...prev, transactions: [t, ...prev.transactions] }));
+      showToast('Транзакцію додано', 'success');
+    } catch (e) {
+      console.error('addTransaction error:', e);
+      showToast('Помилка при додаванні транзакції', 'error');
+    }
+  }, [showToast]);
 
   const updateTransaction = useCallback(async (id: string, data: Partial<Omit<Transaction, 'id' | 'createdAt'>>) => {
-    const t = await api<Transaction>(`/api/transactions/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-    setState(prev => ({
-      ...prev,
-      transactions: prev.transactions.map(x => x.id === id ? t : x),
-    }));
-  }, []);
+    try {
+      const t = await api<Transaction>(`/api/transactions/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      setState(prev => ({
+        ...prev,
+        transactions: prev.transactions.map(x => x.id === id ? t : x),
+      }));
+      showToast('Транзакцію оновлено', 'success');
+    } catch (e) {
+      console.error('updateTransaction error:', e);
+      showToast('Помилка при оновленні транзакції', 'error');
+    }
+  }, [showToast]);
 
   const deleteTransaction = useCallback(async (id: string) => {
-    await api(`/api/transactions/${id}`, { method: 'DELETE' });
-    setState(prev => ({
-      ...prev,
-      transactions: prev.transactions.filter(x => x.id !== id),
-    }));
-  }, []);
+    try {
+      await api(`/api/transactions/${id}`, { method: 'DELETE' });
+      setState(prev => ({
+        ...prev,
+        transactions: prev.transactions.filter(x => x.id !== id),
+      }));
+      showToast('Транзакцію видалено', 'success');
+    } catch (e) {
+      console.error('deleteTransaction error:', e);
+      showToast('Помилка при видаленні транзакції', 'error');
+    }
+  }, [showToast]);
 
   // --- Categories ---
   const addCategory = useCallback(async (data: Omit<Category, 'id'>) => {
-    const c = await api<Category>('/api/categories', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    setState(prev => ({ ...prev, categories: [...prev.categories, c] }));
-  }, []);
+    try {
+      const c = await api<Category>('/api/categories', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      setState(prev => ({ ...prev, categories: [...prev.categories, c] }));
+      showToast('Категорію додано', 'success');
+    } catch (e) {
+      console.error('addCategory error:', e);
+      showToast('Помилка при додаванні категорії', 'error');
+    }
+  }, [showToast]);
 
   const updateCategory = useCallback(async (id: string, data: Partial<Omit<Category, 'id'>>) => {
-    const c = await api<Category>(`/api/categories/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-    setState(prev => ({
-      ...prev,
-      categories: prev.categories.map(x => x.id === id ? c : x),
-    }));
-  }, []);
+    try {
+      const c = await api<Category>(`/api/categories/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      setState(prev => ({
+        ...prev,
+        categories: prev.categories.map(x => x.id === id ? c : x),
+      }));
+      showToast('Категорію оновлено', 'success');
+    } catch (e) {
+      console.error('updateCategory error:', e);
+      showToast('Помилка при оновленні категорії', 'error');
+    }
+  }, [showToast]);
 
   const deleteCategory = useCallback(async (id: string) => {
-    await api(`/api/categories/${id}`, { method: 'DELETE' });
-    setState(prev => ({
-      ...prev,
-      categories: prev.categories.filter(x => x.id !== id),
-      transactions: prev.transactions.filter(x => x.categoryId !== id),
-      budgets: prev.budgets.filter(x => x.categoryId !== id),
-    }));
-  }, []);
+    try {
+      await api(`/api/categories/${id}`, { method: 'DELETE' });
+      setState(prev => ({
+        ...prev,
+        categories: prev.categories.filter(x => x.id !== id),
+        transactions: prev.transactions.filter(x => x.categoryId !== id),
+        budgets: prev.budgets.filter(x => x.categoryId !== id),
+      }));
+      showToast('Категорію видалено', 'success');
+    } catch (e) {
+      console.error('deleteCategory error:', e);
+      showToast('Помилка при видаленні категорії', 'error');
+    }
+  }, [showToast]);
 
   // --- Budgets ---
   const addBudget = useCallback(async (data: Omit<Budget, 'id'>) => {
-    const b = await api<Budget>('/api/budgets', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    setState(prev => {
-      const exists = prev.budgets.find(x => x.categoryId === b.categoryId);
-      if (exists) {
-        return { ...prev, budgets: prev.budgets.map(x => x.categoryId === b.categoryId ? b : x) };
-      }
-      return { ...prev, budgets: [...prev.budgets, b] };
-    });
-  }, []);
+    try {
+      const b = await api<Budget>('/api/budgets', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      setState(prev => {
+        const exists = prev.budgets.find(x => x.categoryId === b.categoryId);
+        if (exists) {
+          return { ...prev, budgets: prev.budgets.map(x => x.categoryId === b.categoryId ? b : x) };
+        }
+        return { ...prev, budgets: [...prev.budgets, b] };
+      });
+      showToast('Бюджет створено', 'success');
+    } catch (e) {
+      console.error('addBudget error:', e);
+      showToast('Помилка при створенні бюджету', 'error');
+    }
+  }, [showToast]);
 
   const updateBudget = useCallback(async (id: string, data: Partial<Omit<Budget, 'id'>>) => {
-    const b = await api<Budget>(`/api/budgets/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-    setState(prev => ({
-      ...prev,
-      budgets: prev.budgets.map(x => x.id === id ? b : x),
-    }));
-  }, []);
+    try {
+      const b = await api<Budget>(`/api/budgets/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      setState(prev => ({
+        ...prev,
+        budgets: prev.budgets.map(x => x.id === id ? b : x),
+      }));
+      showToast('Бюджет оновлено', 'success');
+    } catch (e) {
+      console.error('updateBudget error:', e);
+      showToast('Помилка при оновленні бюджету', 'error');
+    }
+  }, [showToast]);
 
   const deleteBudget = useCallback(async (id: string) => {
-    await api(`/api/budgets/${id}`, { method: 'DELETE' });
-    setState(prev => ({
-      ...prev,
-      budgets: prev.budgets.filter(x => x.id !== id),
-    }));
-  }, []);
+    try {
+      await api(`/api/budgets/${id}`, { method: 'DELETE' });
+      setState(prev => ({
+        ...prev,
+        budgets: prev.budgets.filter(x => x.id !== id),
+      }));
+      showToast('Бюджет видалено', 'success');
+    } catch (e) {
+      console.error('deleteBudget error:', e);
+      showToast('Помилка при видаленні бюджету', 'error');
+    }
+  }, [showToast]);
 
   // --- Goals ---
   const addGoal = useCallback(async (data: Omit<Goal, 'id'>) => {
-    const g = await api<Goal>('/api/goals', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    setState(prev => ({ ...prev, goals: [...prev.goals, g] }));
-  }, []);
+    try {
+      const g = await api<Goal>('/api/goals', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      setState(prev => ({ ...prev, goals: [...prev.goals, g] }));
+      showToast('Ціль створено', 'success');
+    } catch (e) {
+      console.error('addGoal error:', e);
+      showToast('Помилка при створенні цілі', 'error');
+    }
+  }, [showToast]);
 
   const updateGoal = useCallback(async (id: string, data: Partial<Omit<Goal, 'id'>>) => {
-    const g = await api<Goal>(`/api/goals/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-    setState(prev => ({
-      ...prev,
-      goals: prev.goals.map(x => x.id === id ? g : x),
-    }));
-  }, []);
+    try {
+      const g = await api<Goal>(`/api/goals/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      setState(prev => ({
+        ...prev,
+        goals: prev.goals.map(x => x.id === id ? g : x),
+      }));
+      showToast('Прогрес оновлено', 'success');
+    } catch (e) {
+      console.error('updateGoal error:', e);
+      showToast('Помилка при оновленні цілі', 'error');
+    }
+  }, [showToast]);
 
   const deleteGoal = useCallback(async (id: string) => {
-    await api(`/api/goals/${id}`, { method: 'DELETE' });
-    setState(prev => ({
-      ...prev,
-      goals: prev.goals.filter(x => x.id !== id),
-    }));
-  }, []);
+    try {
+      await api(`/api/goals/${id}`, { method: 'DELETE' });
+      setState(prev => ({
+        ...prev,
+        goals: prev.goals.filter(x => x.id !== id),
+      }));
+      showToast('Ціль видалено', 'success');
+    } catch (e) {
+      console.error('deleteGoal error:', e);
+      showToast('Помилка при видаленні цілі', 'error');
+    }
+  }, [showToast]);
 
   // --- Computed ---
   const getBalance = useCallback(() => {
@@ -273,6 +359,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const value: FinanceContextType = {
     state,
     isLoaded,
+    loadError,
+    retryLoad: loadData,
     addTransaction,
     updateTransaction,
     deleteTransaction,

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { FinanceProvider } from "@/lib/context";
 import { AuthProvider } from "@/lib/authContext";
+import { ToastProvider } from "@/lib/toast";
 import AppShell from "@/components/AppShell";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
@@ -43,13 +44,15 @@ export default function RootLayout({
     <html lang="uk">
       <body className="antialiased bg-zinc-950 text-white">
         <ServiceWorkerRegistration />
-        <AuthProvider>
-          <FinanceProvider>
-            <AppShell>
-              {children}
-            </AppShell>
-          </FinanceProvider>
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <FinanceProvider>
+              <AppShell>
+                {children}
+              </AppShell>
+            </FinanceProvider>
+          </AuthProvider>
+        </ToastProvider>
       </body>
     </html>
   );
